@@ -36,9 +36,9 @@ namespace Microsoft.MixedReality.SpectatorView
             return fontAssets?.GetAsset(guid);
         }
 
-        public void UpdateAssetCache()
+        public void UpdateAssetCache(string bundleName)
         {
-            FontAssetCache.GetOrCreateAssetCache<FontAssetCache>().UpdateAssetCache();
+            FontAssetCache.GetOrCreateAssetCache<FontAssetCache>().UpdateAssetCache(bundleName);
         }
 
         public void ClearAssetCache()

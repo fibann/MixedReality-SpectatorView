@@ -46,9 +46,9 @@ namespace Microsoft.MixedReality.SpectatorView
             return spriteAssets?.GetAsset(guid);
         }
 
-        public void UpdateAssetCache()
+        public void UpdateAssetCache(string bundleName)
         {
-            SpriteAssetCache.GetOrCreateAssetCache<SpriteAssetCache>().UpdateAssetCache();
+            SpriteAssetCache.GetOrCreateAssetCache<SpriteAssetCache>().UpdateAssetCache(bundleName);
         }
 
         public void ClearAssetCache()

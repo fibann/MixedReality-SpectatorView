@@ -1,12 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
-using UnityEngine;
-using UnityEditor;
-using System.Linq;
-using System.IO;
 using System.Collections.Generic;
-using UnityEngine.SceneManagement;
+using System.IO;
+using System.Linq;
+using UnityEditor;
+using UnityEngine;
 
 namespace Microsoft.MixedReality.SpectatorView.Editor
 {
@@ -38,19 +37,33 @@ namespace Microsoft.MixedReality.SpectatorView.Editor
 
         private static IEnumerable<IAssetCache> GetAllAssetCaches()
         {
-            var assetCaches = AssetCache.EnumerateAllComponentsInScenesAndPrefabs<IAssetCache>();
+            IEnumerable<IAssetCache> assetCaches = AssetCache.EnumerateAllComponentsInScenesAndPrefabs<IAssetCache>();
             return assetCaches.Distinct(assetTypeComparer);
         }
 
         [MenuItem("Spectator View/Update All Asset Caches", priority = 100)]
         public static void UpdateAllAssetCaches()
         {
+            UpdateAllAssetCaches(AssetBundleCache.AssetBundleName);
+
+            string wsaBundleDir = AssetCache.AssetCacheDirectory + "WSA";
+            string androidBundleDir = AssetCache.AssetCacheDirectory + "Android";
+
+            Directory.CreateDirectory(wsaBundleDir);
+            Directory.CreateDirectory(androidBundleDir);
+
+            BuildPipeline.BuildAssetBundles(wsaBundleDir, BuildAssetBundleOptions.None, BuildTarget.WSAPlayer);
+            BuildPipeline.BuildAssetBundles(androidBundleDir, BuildAssetBundleOptions.None, BuildTarget.Android);
+        }
+
+        public static void UpdateAllAssetCaches(string bundleName)
+        {
             bool assetCacheFound = false;
 
             foreach (IAssetCache assetCache in GetAllAssetCaches())
             {
                 Debug.Log($"Updating asset cache {assetCache.GetType().Name}...");
-                assetCache.UpdateAssetCache();
+                assetCache.UpdateAssetCache(bundleName);
                 assetCacheFound = true;
             }
 

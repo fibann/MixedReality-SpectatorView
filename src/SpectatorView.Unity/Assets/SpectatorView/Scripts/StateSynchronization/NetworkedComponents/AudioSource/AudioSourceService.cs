@@ -56,10 +56,10 @@ namespace Microsoft.MixedReality.SpectatorView
             return audioMixerGroupAssets?.GetAsset(assetId);
         }
 
-        public void UpdateAssetCache()
+        public void UpdateAssetCache(string bundleName)
         {
-            AudioClipAssetCache.GetOrCreateAssetCache<AudioClipAssetCache>().UpdateAssetCache();
-            AudioMixerGroupAssetCache.GetOrCreateAssetCache<AudioMixerGroupAssetCache>().UpdateAssetCache();
+            AudioClipAssetCache.GetOrCreateAssetCache<AudioClipAssetCache>().UpdateAssetCache(bundleName);
+            AudioMixerGroupAssetCache.GetOrCreateAssetCache<AudioMixerGroupAssetCache>().UpdateAssetCache(bundleName);
         }
 
         public void ClearAssetCache()

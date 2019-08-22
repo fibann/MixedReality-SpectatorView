@@ -118,12 +118,12 @@ namespace Microsoft.MixedReality.SpectatorView
             return false;
         }
 
-        public void UpdateAssetCache()
+        public void UpdateAssetCache(string bundleName)
         {
-            AssetCache.GetOrCreateAssetCache<TextureAssetCache>().UpdateAssetCache();
-            AssetCache.GetOrCreateAssetCache<MeshAssetCache>().UpdateAssetCache();
-            AssetCache.GetOrCreateAssetCache<MaterialPropertyAssetCache>().UpdateAssetCache();
-            AssetCache.GetOrCreateAssetCache<CustomShaderPropertyAssetCache>().UpdateAssetCache();
+            AssetCache.GetOrCreateAssetCache<TextureAssetCache>().UpdateAssetCache(bundleName);
+            AssetCache.GetOrCreateAssetCache<MeshAssetCache>().UpdateAssetCache(bundleName);
+            AssetCache.GetOrCreateAssetCache<MaterialPropertyAssetCache>().UpdateAssetCache(bundleName);
+            AssetCache.GetOrCreateAssetCache<CustomShaderPropertyAssetCache>().UpdateAssetCache(bundleName);
         }
 
         public void ClearAssetCache()

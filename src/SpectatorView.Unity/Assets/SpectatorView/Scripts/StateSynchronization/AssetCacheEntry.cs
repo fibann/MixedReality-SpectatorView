@@ -3,7 +3,7 @@
 
 namespace Microsoft.MixedReality.SpectatorView
 {
-    internal class AssetCacheEntry<T> where T : class
+    internal class AssetCacheEntry<T> where T : UnityEngine.Object
     {
         public StringGuid AssetId;
         public T Asset;

@@ -54,24 +54,14 @@ namespace Microsoft.MixedReality.SpectatorView
             return universalMaterialProperties.Concat(MaterialPropertiesByShaderName[shaderName]).Concat(CustomMaterialPropertiesByShaderName[shaderName]);
         }
 
-        private ILookup<string, MaterialPropertyAsset> MaterialPropertiesByShaderName
-        {
-            get
-            {
-                return materialPropertiesByShaderName ?? (materialPropertiesByShaderName = (materialPropertyAssets ?? Array.Empty<MaterialPropertyAsset>()).ToLookup(m => m.ShaderName));
-            }
-        }
+        private ILookup<string, MaterialPropertyAsset> MaterialPropertiesByShaderName => materialPropertiesByShaderName ?? (materialPropertiesByShaderName = (materialPropertyAssets ?? Array.Empty<MaterialPropertyAsset>()).ToLookup(m => m.ShaderName));
 
-        private ILookup<string, MaterialPropertyAsset> CustomMaterialPropertiesByShaderName
-        {
-            get
-            {
-                return customMaterialPropertiesByShaderName ?? (customMaterialPropertiesByShaderName = CustomInstanceShaderProperties.ToLookup(m => m.ShaderName));
-            }
-        }
+        private ILookup<string, MaterialPropertyAsset> CustomMaterialPropertiesByShaderName => customMaterialPropertiesByShaderName ?? (customMaterialPropertiesByShaderName = CustomInstanceShaderProperties.ToLookup(m => m.ShaderName));
 
-        public override void UpdateAssetCache()
+        public override void UpdateAssetCache(string bundleName)
         {
+            base.UpdateAssetCache(bundleName);
+
 #if UNITY_EDITOR
             Dictionary<MaterialPropertyKey, MaterialPropertyAsset> materialProperties = (materialPropertyAssets ?? Array.Empty<MaterialPropertyAsset>()).ToDictionary(p => new MaterialPropertyKey { PropertyName = p.propertyName, ShaderName = p.ShaderName });
             HashSet<MaterialPropertyKey> unvisitedMaterialProperties = new HashSet<MaterialPropertyKey>(materialProperties.Keys);
@@ -129,7 +119,7 @@ namespace Microsoft.MixedReality.SpectatorView
             {
                 foreach (MaterialProperty materialProperty in MaterialEditor.GetMaterialProperties(new Material[] { material }))
                 {
-                    var key = new MaterialPropertyKey(material.shader.name, materialProperty.name);
+                    MaterialPropertyKey key = new MaterialPropertyKey(material.shader.name, materialProperty.name);
                     unvisitedMaterialProperties.Remove(key);
                     if (!materialProperties.ContainsKey(key))
                     {

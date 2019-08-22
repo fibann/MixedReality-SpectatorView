@@ -43,7 +43,7 @@ namespace Microsoft.MixedReality.SpectatorView
     /// </summary>
     public interface IAssetCache
     {
-        void UpdateAssetCache();
+        void UpdateAssetCache(string bundleName);
         void ClearAssetCache();
     }
 

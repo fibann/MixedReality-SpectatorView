@@ -13,25 +13,71 @@ using UnityEditor;
 
 namespace Microsoft.MixedReality.SpectatorView
 {
+    public static class AssetBundleCache
+    {
+        public const string AssetBundleName = "SpectatorView.Assets";
+
+        private static bool checkedForAssetBundle = false;
+        private static AssetBundle assetBundle = null;
+        public static AssetBundle AssetBundle
+        {
+            get
+            {
+                CheckForAssetBundle();
+                return assetBundle;
+            }
+        }
+
+        private static void CheckForAssetBundle()
+        {
+            if (!checkedForAssetBundle)
+            {
+                checkedForAssetBundle = true;
+                // Check if there is an assetbundle we can load instead
+                string filePath = Path.Combine(Application.streamingAssetsPath);
+#if UNITY_WSA
+                filePath = Path.Combine(filePath, "WSA");
+#elif UNITY_ANDROID
+            filePath = Path.Combine(filePath, "Android");
+#endif
+                filePath = Path.Combine(filePath, AssetBundleName);
+
+                if (File.Exists(filePath))
+                {
+                    assetBundle = AssetBundle.LoadFromFile(filePath);
+                }
+            }
+        }
+    }
+
     internal abstract class AssetCache : ScriptableObject
     {
-        const string assetCacheDirectory = "Generated.StateSynchronization.AssetCaches";
+        private const string assetCacheDirectory = "Generated.StateSynchronization.AssetCaches";
+
+        public static string AssetCacheDirectory => $"Assets/{assetCacheDirectory}/Resources/";
 
         public static TAssetCache LoadAssetCache<TAssetCache>()
             where TAssetCache : AssetCache
         {
-            return Resources.Load<TAssetCache>(typeof(TAssetCache).Name);
+            if (AssetBundleCache.AssetBundle == null)
+            {
+                return Resources.Load<TAssetCache>(typeof(TAssetCache).Name);
+            }
+            else
+            {
+                return AssetBundleCache.AssetBundle.LoadAsset<TAssetCache>($"{typeof(TAssetCache).Name}.asset");
+            }
         }
 
         public static string GetAssetPath(string assetName, string assetExtension)
         {
-            return $"Assets/{assetCacheDirectory}/Resources/" + assetName + assetExtension;
+            return AssetCacheDirectory + assetName + assetExtension;
         }
 
         public static void EnsureAssetDirectoryExists()
         {
 #if UNITY_EDITOR
-            if (!AssetDatabase.IsValidFolder( $"Assets/{assetCacheDirectory}"))
+            if (!AssetDatabase.IsValidFolder($"Assets/{assetCacheDirectory}"))
             {
                 AssetDatabase.CreateFolder("Assets", $"{assetCacheDirectory}");
             }
@@ -67,8 +113,32 @@ namespace Microsoft.MixedReality.SpectatorView
         {
         }
 
-        public virtual void UpdateAssetCache()
+        protected void SetAssetBundle(UnityEngine.Object obj, string bundleName)
         {
+#if UNITY_EDITOR
+            if (obj == null)
+            {
+                Debug.LogError("Given a null obj to set AssetBundle on.");
+                return;
+            }
+
+            string assetPath = AssetDatabase.GetAssetPath(obj);
+            AssetImporter importer = AssetImporter.GetAtPath(assetPath);
+
+            if (importer == null)
+            {
+                Debug.LogError($"Failed to get importer for asset '{obj.name}' of type '{obj.GetType().Name}' at path '{assetPath}'.");
+            }
+            else
+            {
+                importer.SetAssetBundleNameAndVariant(bundleName, "");
+            }
+#endif
+        }
+
+        public virtual void UpdateAssetCache(string bundleName)
+        {
+            SetAssetBundle(this, bundleName);
         }
 
         protected static void CleanUpUnused<T, TValue>(Dictionary<T, TValue> dictionary, HashSet<T> unused)
@@ -141,7 +211,7 @@ namespace Microsoft.MixedReality.SpectatorView
                         scene = SceneManager.GetSceneByBuildIndex(i);
                         scenesToClose.Add(scene);
                     }
-                    var rootGameObjects = scene.GetRootGameObjects();
+                    GameObject[] rootGameObjects = scene.GetRootGameObjects();
                     foreach (T descendant in rootGameObjects.SelectMany(go => go.GetComponentsInChildren<T>(includeInactive: true)))
                     {
                         yield return descendant;
@@ -151,7 +221,7 @@ namespace Microsoft.MixedReality.SpectatorView
 
             if (!foundActiveScene)
             {
-                var rootGameObjects = activeScene.GetRootGameObjects();
+                GameObject[] rootGameObjects = activeScene.GetRootGameObjects();
                 foreach (T descendant in rootGameObjects.SelectMany(go => go.GetComponentsInChildren<T>(includeInactive: true)))
                 {
                     yield return descendant;
@@ -218,8 +288,7 @@ namespace Microsoft.MixedReality.SpectatorView
 
         public TAsset GetAsset(Guid assetId)
         {
-            TAssetEntry assetEntry;
-            if (LookupByAssetId.TryGetValue(assetId, out assetEntry))
+            if (LookupByAssetId.TryGetValue(assetId, out TAssetEntry assetEntry))
             {
                 return assetEntry.Asset;
             }
@@ -231,8 +300,7 @@ namespace Microsoft.MixedReality.SpectatorView
 
         public Guid GetAssetId(TAsset asset)
         {
-            TAssetEntry assetEntry;
-            if (asset != null && LookupByAsset.TryGetValue(asset, out assetEntry))
+            if (asset != null && LookupByAsset.TryGetValue(asset, out TAssetEntry assetEntry))
             {
                 return assetEntry.AssetId;
             }
@@ -255,8 +323,10 @@ namespace Microsoft.MixedReality.SpectatorView
 #endif
         }
 
-        public override void UpdateAssetCache()
+        public override void UpdateAssetCache(string bundleName)
         {
+            base.UpdateAssetCache(bundleName);
+
 #if UNITY_EDITOR
             Dictionary<TAsset, TAssetEntry> oldAssets = (assets ?? Array.Empty<TAssetEntry>()).Where(a => a.Asset != null).ToDictionary(a => a.Asset);
 
@@ -277,6 +347,10 @@ namespace Microsoft.MixedReality.SpectatorView
 
             CleanUpUnused(oldAssets, unvisitedAssets);
             assets = oldAssets.Values.ToArray();
+            foreach (TAssetEntry asset in assets)
+            {
+                SetAssetBundle(asset.Asset, bundleName);
+            }
 
             EditorUtility.SetDirty(this);
 #endif
