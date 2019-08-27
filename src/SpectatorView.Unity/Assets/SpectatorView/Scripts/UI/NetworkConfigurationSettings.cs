@@ -10,6 +10,11 @@ namespace Microsoft.MixedReality.SpectatorView
         [Tooltip("Specify a custom prefab containing an INetworkConnectionManager")]
         [SerializeField]
         private GameObject overrideConnectionManagerPrefab = null;
+        
+        public string RoomName;
+        public string BroadcastIPAddress = "255.255.255.255";
+        public ushort BroadcastPort = 7411;
+        public bool JoinMulticastGroup = false;
 
         [Tooltip("Check to enable a mobile network configuration visual to obtain the user IP Address.")]
         [SerializeField]

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System;
 using System.Threading.Tasks;
 using Microsoft.MixedReality.SpatialAlignment;
+using Assets.SpectatorView.Scripts.Matchmaking;
 
 [assembly: InternalsVisibleToAttribute("Microsoft.MixedReality.SpectatorView.Editor")]
 
@@ -71,6 +72,11 @@ namespace Microsoft.MixedReality.SpectatorView
         [Tooltip("StateSynchronizationObserver MonoBehaviour")]
         [SerializeField]
         private StateSynchronizationObserver stateSynchronizationObserver = null;
+
+        [SerializeField]
+        private RoomServer roomServer = null;
+        [SerializeField]
+        private RoomClient roomClient = null;
 
         [Header("Spatial Alignment")]
         [Tooltip("A prioritized list of SpatialLocalizationInitializers that should be used when a spectator connects.")]
@@ -185,6 +191,11 @@ namespace Microsoft.MixedReality.SpectatorView
                 Debug.LogError("StateSynchronization scene isn't configured correctly");
                 return;
             }
+            if (ShouldUseMatchmaking() && (roomServer == null || roomClient == null))
+            {
+                Debug.LogError("Matchmaking isn't configured correctly");
+                return;
+            }
 
             switch (Role)
             {
@@ -197,8 +208,12 @@ namespace Microsoft.MixedReality.SpectatorView
                         }
 
                         RunStateSynchronizationAsBroadcaster();
+                        if (ShouldUseMatchmaking())
+                        {
+                            roomServer.gameObject.SetActive(true);
+                        }
                     }
-                    break;
+                break;
                 case Role.Spectator:
                     {
                         if (spectatorDebugVisualPrefab != null)
@@ -223,7 +238,15 @@ namespace Microsoft.MixedReality.SpectatorView
             if (!ShouldUseNetworkConfigurationVisual())
             {
                 DebugLog("Not using a network configuration visual, beginning state synchronization as an observer.");
-                RunStateSynchronizationAsObserver();
+                if (ShouldUseMatchmaking())
+                {
+                    roomClient.OnIpDiscovered += OnNetworkConfigurationUpdated;
+                    roomClient.gameObject.SetActive(true);
+                }
+                else
+                {
+                    RunStateSynchronizationAsObserver();
+                }
             }
             else
             {
@@ -305,7 +328,7 @@ namespace Microsoft.MixedReality.SpectatorView
                 recordingVisualPrefab = MobileRecordingSettings.Instance.OverrideMobileRecordingServicePrefab;
             }
 
-            if (MobileRecordingSettings.IsInitialized && 
+            if (MobileRecordingSettings.IsInitialized &&
                 MobileRecordingSettings.Instance.EnableMobileRecordingService &&
                 recordingVisualPrefab != null)
             {
@@ -395,6 +418,18 @@ namespace Microsoft.MixedReality.SpectatorView
 
             RunStateSynchronizationAsObserver();
 #endif
+        }
+
+        private bool ShouldUseMatchmaking()
+        {
+            if (NetworkConfigurationSettings.IsInitialized)
+            {
+                return NetworkConfigurationSettings.Instance.RoomName.Length != 0;
+            }
+            else
+            {
+                return false;
+            }
         }
 
 
