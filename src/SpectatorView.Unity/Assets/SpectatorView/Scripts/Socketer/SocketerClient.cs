@@ -409,25 +409,56 @@ namespace Microsoft.MixedReality.SpectatorView
                     }
                 }
 #else
+                // Try to get the IP corresponding to the system internet connection.
                 var icp = NetworkInformation.GetInternetConnectionProfile();
-                HostNameType hostNameType = HostNameType.Ipv4;
                 if (icp?.NetworkAdapter == null) return null;
-                var hostname =
-                    NetworkInformation.GetHostNames()
-                        .FirstOrDefault(
-                            hn =>
-                                hn.Type == hostNameType &&
-                                hn.IPInformation?.NetworkAdapter != null && 
-                                hn.IPInformation.NetworkAdapter.NetworkAdapterId == icp.NetworkAdapter.NetworkAdapterId);
-
-                if (hostname != null)
+                var address = GetAddressFromAdapterId(icp.NetworkAdapter.NetworkAdapterId);
+                if (address == null)
                 {
-                    // the ip address
-                    return hostname.CanonicalName;
+                    // The system doesn't seem to have an IPv4 Internet connection; get the first
+                    // adapter with a local connection then.
+                    var fallbackProfile = NetworkInformation.GetConnectionProfiles().FirstOrDefault(
+                        p =>
+                        {
+                            return p.ProfileName != icp.ProfileName &&
+                                p.GetNetworkConnectivityLevel() != NetworkConnectivityLevel.None;
+                        });
+                    address = GetAddressFromAdapterId(fallbackProfile.NetworkAdapter.NetworkAdapterId);
+                }
+
+                if (address != null)
+                {
+                    return address;
                 }
 #endif
                 throw new Exception("No network adapters with an IPv4 address in the system!");
             }
+
+#if NETFX_CORE
+            private static string GetAddressFromAdapterId(Guid id)
+            {
+                var hostname =
+                    NetworkInformation.GetHostNames()
+                        .FirstOrDefault(
+                            hn =>
+                                hn.Type == HostNameType.Ipv4 &&
+                                hn.IPInformation?.NetworkAdapter != null &&
+                                hn.IPInformation.NetworkAdapter.NetworkAdapterId == id);
+
+                if (hostname != null &&
+                    IPAddress.TryParse(hostname.CanonicalName, out IPAddress address))
+                {
+                    // 169.254.x.x is a private address used by Windows when DHCP is unavailable;
+                    // it most likely means a mis-configured/unavailable network.
+                    var bytes = address.GetAddressBytes();
+                    if (!(bytes[0] == 169 && bytes[1] == 254))
+                    {
+                        return hostname.CanonicalName;
+                    }
+                }
+                return null;
+            }
+#endif
 
 #if !NETFX_CORE
             UdpClient client;
@@ -485,7 +516,7 @@ namespace Microsoft.MixedReality.SpectatorView
 
                 var outputStreamAyncOperation = client.GetOutputStreamAsync(hostname, port.ToString());
                 outputStreamAyncOperation.Completed += new AsyncOperationCompletedHandler<IOutputStream>((asyncInfo, asyncStatus) =>
-                { 
+                {
                     var outputStream = asyncInfo.GetResults();
                     var writeOperation = outputStream.WriteAsync(data.AsBuffer());
                     writeOperation.Completed += new AsyncOperationWithProgressCompletedHandler<uint,uint>((info, status) =>
@@ -527,7 +558,7 @@ namespace Microsoft.MixedReality.SpectatorView
                 uint bytesToRead = reader.UnconsumedBufferLength;
                 byte[] buffer = new byte[bytesToRead];
                 reader.ReadBytes(buffer);
-        
+
                 string host = args.RemoteAddress.ToString();
 
                 if (Message != null)
@@ -633,7 +664,7 @@ namespace Microsoft.MixedReality.SpectatorView
 
             /// <summary>
             /// Starts the client thread. The client will then
-            /// try connecting on the port continually, sending data, and 
+            /// try connecting on the port continually, sending data, and
             /// parsing any messages it receives and raising events
             /// </summary>
             public void Start()
@@ -1021,7 +1052,7 @@ namespace Microsoft.MixedReality.SpectatorView
                     catch
                     {
                     }
-                    
+
                     writer.Dispose();
                     writer = null;
                 }
