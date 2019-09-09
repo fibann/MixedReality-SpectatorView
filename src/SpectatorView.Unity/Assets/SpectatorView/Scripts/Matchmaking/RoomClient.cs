@@ -27,14 +27,13 @@ namespace Assets.SpectatorView.Scripts.Matchmaking
             string roomName = NetworkConfigurationSettings.IsInitialized ? NetworkConfigurationSettings.Instance.RoomName : null;
             if (roomName != null)
             {
-                if (IPAddress.TryParse(NetworkConfigurationSettings.Instance.BroadcastIPAddress, out IPAddress broadcastAddr) &&
-                    IPAddress.TryParse(SocketerClient.GetLocalIPAddress(), out IPAddress localAddr))
+                if (IPAddress.TryParse(NetworkConfigurationSettings.Instance.BroadcastIPAddress, out IPAddress broadcastAddr))
                 {
                     var mode = NetworkConfigurationSettings.Instance.JoinMulticastGroup ?
                         UdpPeerNetwork.JoinMulticastGroup.Join : UdpPeerNetwork.JoinMulticastGroup.DoNotJoin;
                     _mmService = new PeerMatchmakingService(
                         new UdpPeerNetwork(new IPEndPoint(broadcastAddr, NetworkConfigurationSettings.Instance.BroadcastPort),
-                        new IPEndPoint(localAddr, NetworkConfigurationSettings.Instance.BroadcastPort), mode));
+                        new IPEndPoint(IPAddress.Any /* TODO IPv6 */, NetworkConfigurationSettings.Instance.BroadcastPort), mode));
                     Debug.Log($"Searching for room {roomName}");
                     Debug.Log($"Listening on {broadcastAddr}");
 
