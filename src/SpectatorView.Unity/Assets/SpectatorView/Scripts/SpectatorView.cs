@@ -8,7 +8,9 @@ using System.Collections.Generic;
 using System;
 using System.Threading.Tasks;
 using Microsoft.MixedReality.SpatialAlignment;
-using Assets.SpectatorView.Scripts.Matchmaking;
+using Microsoft.MixedReality.Sharing.Matchmaking;
+using System.Linq;
+using System.Net;
 
 [assembly: InternalsVisibleToAttribute("Microsoft.MixedReality.SpectatorView.Editor")]
 
@@ -35,6 +37,13 @@ namespace Microsoft.MixedReality.SpectatorView
         public Role Role;
 
         [Header("Networking")]
+        /// <summary>
+        /// TODO
+        /// </summary>
+        [Tooltip("TODO")]
+        [SerializeField]
+        private string roomName = "SpectatorView";
+
         /// <summary>
         /// User ip address, this value is used for the user if 'Use Mobile Network Configuration Visual' is set to false.
         /// </summary>
@@ -73,10 +82,12 @@ namespace Microsoft.MixedReality.SpectatorView
         [SerializeField]
         private StateSynchronizationObserver stateSynchronizationObserver = null;
 
+        /// <summary>
+        /// UDPMatchmakingService MonoBehaviour
+        /// </summary>
+        [Tooltip("UDPMatchmakingService MonoBehaviour")]
         [SerializeField]
-        private RoomServer roomServer = null;
-        [SerializeField]
-        private RoomClient roomClient = null;
+        private MatchmakingService matchmakingService = null;
 
         [Header("Spatial Alignment")]
         [Tooltip("A prioritized list of SpatialLocalizationInitializers that should be used when a spectator connects.")]
@@ -157,6 +168,7 @@ namespace Microsoft.MixedReality.SpectatorView
         private GameObject settingsGameObject;
         private Dictionary<SpatialCoordinateSystemParticipant, ISet<Guid>> peerSupportedLocalizers = new Dictionary<SpatialCoordinateSystemParticipant, ISet<Guid>>();
         private SpatialCoordinateSystemParticipant currentParticipant = null;
+        private IDiscoveryTask discoveryTask;
 
 #if UNITY_ANDROID || UNITY_IOS
         private GameObject mobileRecordingServiceVisual = null;
@@ -191,10 +203,17 @@ namespace Microsoft.MixedReality.SpectatorView
                 Debug.LogError("StateSynchronization scene isn't configured correctly");
                 return;
             }
-            if (ShouldUseMatchmaking() && (roomServer == null || roomClient == null))
+            if (ShouldUseMatchmaking())
             {
-                Debug.LogError("Matchmaking isn't configured correctly");
-                return;
+                if (matchmakingService == null)
+                {
+                    Debug.LogError("Matchmaking isn't configured correctly");
+                    return;
+                }
+
+                // TODO override options from settings
+
+                matchmakingService.gameObject.SetActive(true);
             }
 
             switch (Role)
@@ -208,10 +227,6 @@ namespace Microsoft.MixedReality.SpectatorView
                         }
 
                         RunStateSynchronizationAsBroadcaster();
-                        if (ShouldUseMatchmaking())
-                        {
-                            roomServer.gameObject.SetActive(true);
-                        }
                     }
                 break;
                 case Role.Spectator:
@@ -240,8 +255,8 @@ namespace Microsoft.MixedReality.SpectatorView
                 DebugLog("Not using a network configuration visual, beginning state synchronization as an observer.");
                 if (ShouldUseMatchmaking())
                 {
-                    roomClient.OnIpDiscovered += OnNetworkConfigurationUpdated;
-                    roomClient.gameObject.SetActive(true);
+                    // Start room discovery. The observer will be started when a room is found.
+                    discoveryTask = matchmakingService.StartDiscovery(roomName);
                 }
                 else
                 {
@@ -273,6 +288,19 @@ namespace Microsoft.MixedReality.SpectatorView
             {
                 Debug.developerConsoleVisible = false;
             }
+
+            if (discoveryTask != null)
+            {
+                var found = discoveryTask.Rooms.FirstOrDefault();
+                if (found != null)
+                {
+                    Debug.Log($"Found room {roomName} at {found.Connection}");
+                    // Start the observer.
+                    OnNetworkConfigurationUpdated(discoveryTask, found.Connection);
+                    discoveryTask.Dispose();
+                    discoveryTask = null;
+                }
+            }
         }
 
         private void OnDestroy()
@@ -294,6 +322,10 @@ namespace Microsoft.MixedReality.SpectatorView
             {
                 SpatialCoordinateSystemManager.Instance.ParticipantConnected -= OnParticipantConnected;
             }
+            if (stateSynchronizationBroadcaster != null)
+            {
+                stateSynchronizationBroadcaster.OnStarted -= StartAdvertisingBroadcaster;
+            }
         }
 
         private void RunStateSynchronizationAsBroadcaster()
@@ -303,6 +335,18 @@ namespace Microsoft.MixedReality.SpectatorView
 
             // The StateSynchronizationSceneManager needs to be enabled after the broadcaster/observer
             stateSynchronizationSceneManager.gameObject.SetActive(true);
+
+            if (ShouldUseMatchmaking())
+            {
+                // Start advertising the room once the broadcaster is listening for connections.
+                stateSynchronizationBroadcaster.OnStarted += StartAdvertisingBroadcaster;
+            }
+        }
+
+        private void StartAdvertisingBroadcaster()
+        {
+            var localIpAddress = SocketerClient.GetLocalIPAddress();
+            matchmakingService.CreateRoomAsync(roomName, localIpAddress);
         }
 
         private void RunStateSynchronizationAsObserver()
@@ -424,12 +468,9 @@ namespace Microsoft.MixedReality.SpectatorView
         {
             if (NetworkConfigurationSettings.IsInitialized)
             {
-                return NetworkConfigurationSettings.Instance.RoomName.Length != 0;
+                // TODO check some flag in the settings
             }
-            else
-            {
-                return false;
-            }
+            return matchmakingService != null;
         }
 
 

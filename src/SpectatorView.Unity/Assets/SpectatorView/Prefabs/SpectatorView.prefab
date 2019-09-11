@@ -1,51 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &322102833411396016
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2421198896732735083}
-  - component: {fileID: 1529743466433113461}
-  m_Layer: 0
-  m_Name: RoomServer
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!4 &2421198896732735083
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 322102833411396016}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 4941633254374932147}
-  m_RootOrder: 4
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1529743466433113461
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 322102833411396016}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fec8c39e05c395b4b8b9d9adb51bebec, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  LocalIPAddress: 
-  BroadcastIPAddress: 255.255.255.255
-  BroadcastPort: 7411
 --- !u!1 &415470005723002659
 GameObject:
   m_ObjectHideFlags: 0
@@ -200,14 +154,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Role: 0
+  roomName: SpectatorView
   userIpAddress: 127.0.0.1
   defaultMobileNetworkConfigurationVisualPrefab: {fileID: 5997078630048438623, guid: cbdca089afceb004090ad48d7e385eba,
     type: 3}
   stateSynchronizationSceneManager: {fileID: 4715176406495730955}
   stateSynchronizationBroadcaster: {fileID: 4941633254549859856}
   stateSynchronizationObserver: {fileID: 4941633254517527404}
-  roomServer: {fileID: 1529743466433113461}
-  roomClient: {fileID: 929227347519987468}
+  matchmakingService: {fileID: 195981235270320951}
   defaultSpatialLocalizationInitializers:
   - {fileID: 5317805835895109800}
   - {fileID: 7339675784917655566}
@@ -258,8 +212,7 @@ Transform:
   - {fileID: 4941633254549859859}
   - {fileID: 4941633254517527407}
   - {fileID: 4715176406495730954}
-  - {fileID: 2421198896732735083}
-  - {fileID: 6642969308567369417}
+  - {fileID: 6856068437593783850}
   m_Father: {fileID: 4941633254297953243}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -370,7 +323,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 74847b432cd730c4d896483060087a77, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!1 &9177567482869124947
+--- !u!1 &7801790192165554871
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -378,43 +331,45 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 6642969308567369417}
-  - component: {fileID: 929227347519987468}
+  - component: {fileID: 6856068437593783850}
+  - component: {fileID: 195981235270320951}
   m_Layer: 0
-  m_Name: RoomClient
+  m_Name: MatchmakingService
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 0
---- !u!4 &6642969308567369417
+--- !u!4 &6856068437593783850
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9177567482869124947}
+  m_GameObject: {fileID: 7801790192165554871}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 4941633254374932147}
-  m_RootOrder: 5
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &929227347519987468
+--- !u!114 &195981235270320951
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9177567482869124947}
+  m_GameObject: {fileID: 7801790192165554871}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 86b2fb0fecb4d434f99c235206a46400, type: 3}
+  m_Script: {fileID: 11500000, guid: 897d70a6672f9f64c87aebb427feb58a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  BroadcastIPAddress: 255.255.255.255
-  BroadcastPort: 7411
+  _options:
+    BroadcastPort: 7411
+    BroadcastAddress: 
+    LocalAddress: 
 --- !u!1001 &7426442734984199206
 PrefabInstance:
   m_ObjectHideFlags: 0

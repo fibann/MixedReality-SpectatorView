@@ -31,8 +31,13 @@ namespace Microsoft.MixedReality.SpectatorView
         private int numFrames = 0;
 
         private GameObject dontDestroyOnLoadGameObject;
-        
+
         protected override int RemotePort => Port;
+
+        /// <summary>
+        /// Called after the broadcaster has started listening for connections.
+        /// </summary>
+        public event Action OnStarted;
 
         protected override void Awake()
         {
@@ -58,6 +63,7 @@ namespace Microsoft.MixedReality.SpectatorView
         {
             base.Start();
             StartListening(Port);
+            OnStarted?.Invoke();
         }
 
         private void DebugLog(string message)
