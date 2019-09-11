@@ -403,7 +403,8 @@ namespace Microsoft.MixedReality.SpectatorView
 #endif
                 foreach (var ip in host.AddressList)
                 {
-                    if (ip.AddressFamily == AddressFamily.InterNetwork)
+                    if (ip.AddressFamily == AddressFamily.InterNetwork &&
+                        !IsPrivateAddress(ip))
                     {
                         return ip.ToString();
                     }
@@ -434,6 +435,14 @@ namespace Microsoft.MixedReality.SpectatorView
                 throw new Exception("No network adapters with an IPv4 address in the system!");
             }
 
+            private static bool IsPrivateAddress(IPAddress address)
+            {
+                // 169.254.x.x is a private address used by Windows when DHCP is unavailable;
+                // it most likely means a mis-configured/unavailable network.
+                var bytes = address.GetAddressBytes();
+                return bytes[0] == 169 && bytes[1] == 254;
+            }
+
 #if NETFX_CORE
             private static string GetAddressFromAdapterId(Guid id)
             {
@@ -448,10 +457,7 @@ namespace Microsoft.MixedReality.SpectatorView
                 if (hostname != null &&
                     IPAddress.TryParse(hostname.CanonicalName, out IPAddress address))
                 {
-                    // 169.254.x.x is a private address used by Windows when DHCP is unavailable;
-                    // it most likely means a mis-configured/unavailable network.
-                    var bytes = address.GetAddressBytes();
-                    if (!(bytes[0] == 169 && bytes[1] == 254))
+                    if (!IsPrivateAddress(address))
                     {
                         return hostname.CanonicalName;
                     }
