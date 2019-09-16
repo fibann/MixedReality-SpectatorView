@@ -178,6 +178,12 @@ namespace Microsoft.MixedReality.SpectatorView
             IReadOnlyDictionary<string, string> attributes = null,
             CancellationToken token = default)
         {
+            if (_mmService == null)
+            {
+                Debug.LogError($"Cannot create room ({category}, {connection}): MatchmakingService is not initialized");
+                return null;
+            }
+
             Debug.Log($"Creating room ({category}, {connection})");
             return _mmService.CreateRoomAsync(category, connection, attributes, token)
                 .ContinueWith(task =>
@@ -202,6 +208,12 @@ namespace Microsoft.MixedReality.SpectatorView
 
         public IDiscoveryTask StartDiscovery(string category)
         {
+            if (_mmService == null)
+            {
+                Debug.LogError($"Cannot start discovery of category {category}: MatchmakingService is not initialized");
+                return null;
+            }
+
             Debug.Log($"Start discovery of category {category}");
             var task = _mmService.StartDiscovery(category);
 #if ANDROID_DEVICE
