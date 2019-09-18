@@ -8,6 +8,11 @@ namespace Microsoft.MixedReality.SpectatorView
     public interface INetworkConfigurationVisual
     {
         /// <summary>
+        /// MatchmakingService that this object can use to make room queries.
+        /// </summary>
+        MatchmakingService MatchmakingService { get; set; }
+
+        /// <summary>
         /// Called when the associated network configuration has been updated.
         /// </summary>
         event Action<INetworkConfigurationVisual, string> NetworkConfigurationUpdated;

@@ -28,6 +28,9 @@ namespace Microsoft.MixedReality.SpectatorView
         public event Action<INetworkConfigurationVisual, string> NetworkConfigurationUpdated;
         private readonly string ipAddressPlayerPrefKey = $"{nameof(MobileNetworkConfigurationVisual)}.{nameof(ipAddress)}";
 
+        // Unused.
+        public MatchmakingService MatchmakingService { get => null; set { } }
+
         public void Show()
         {
             this.gameObject.SetActive(true);

@@ -37,17 +37,27 @@ namespace Microsoft.MixedReality.SpectatorView
         public Role Role;
 
         [Header("Networking")]
+
         /// <summary>
-        /// TODO
+        /// MatchmakingService MonoBehaviour. If set, users and clients will use 'Room Name' to connect, otherwise 'User IP Address'.
         /// </summary>
-        [Tooltip("TODO")]
+        [Tooltip("MatchmakingService MonoBehaviour. If set, users and clients will use 'Room Name' to connect, otherwise 'User IP Address'.")]
+        [SerializeField]
+        private MatchmakingService matchmakingService = null;
+
+        /// <summary>
+        /// The user will advertise this room and clients will search for it and join it automatically.
+        /// Ignored if 'Use Mobile Network Configuration Visual' is set to true or if 'Matchmaking Service' is null.
+        /// </summary>
+        [Tooltip("The user will advertise this room and clients will search for it and join it automatically. " +
+            "Ignored if 'Use Mobile Network Configuration Visual' is set to true or if 'Matchmaking Service' is null.")]
         [SerializeField]
         private string roomName = "SpectatorView";
 
         /// <summary>
-        /// User ip address, this value is used for the user if 'Use Mobile Network Configuration Visual' is set to false.
+        /// User IP address, this value is used for the user if 'Use Mobile Network Configuration Visual' is set to false and 'Matchmaking Service' is null.
         /// </summary>
-        [Tooltip("User ip address, this value is used for the user if 'Use Mobile Network Configuration Visual' is set to false.")]
+        [Tooltip("User IP address, this value is used for the user if 'Use Mobile Network Configuration Visual' is set to false and 'Matchmaking Service' is null.")]
         [SerializeField]
         private string userIpAddress = "127.0.0.1";
 
@@ -81,13 +91,6 @@ namespace Microsoft.MixedReality.SpectatorView
         [Tooltip("StateSynchronizationObserver MonoBehaviour")]
         [SerializeField]
         private StateSynchronizationObserver stateSynchronizationObserver = null;
-
-        /// <summary>
-        /// UDPMatchmakingService MonoBehaviour
-        /// </summary>
-        [Tooltip("UDPMatchmakingService MonoBehaviour")]
-        [SerializeField]
-        private MatchmakingService matchmakingService = null;
 
         [Header("Spatial Alignment")]
         [Tooltip("A prioritized list of SpatialLocalizationInitializers that should be used when a spectator connects.")]
@@ -168,7 +171,6 @@ namespace Microsoft.MixedReality.SpectatorView
         private GameObject settingsGameObject;
         private Dictionary<SpatialCoordinateSystemParticipant, ISet<Guid>> peerSupportedLocalizers = new Dictionary<SpatialCoordinateSystemParticipant, ISet<Guid>>();
         private SpatialCoordinateSystemParticipant currentParticipant = null;
-        private IDiscoveryTask discoveryTask;
 
 #if UNITY_ANDROID || UNITY_IOS
         private GameObject mobileRecordingServiceVisual = null;
@@ -252,11 +254,25 @@ namespace Microsoft.MixedReality.SpectatorView
         {
             if (!ShouldUseNetworkConfigurationVisual())
             {
-                DebugLog("Not using a network configuration visual, beginning state synchronization as an observer.");
+                DebugLog("Not using a network configuration visual");
                 if (ShouldUseMatchmaking())
                 {
                     // Start room discovery. The observer will be started when a room is found.
-                    discoveryTask = matchmakingService.StartDiscovery(roomName);
+                    DebugLog($"Searching for room {roomName}");
+                    var findRoom = gameObject.AddComponent<RoomDiscovery>();
+                    findRoom.MatchmakingService = matchmakingService;
+                    findRoom.Category = "SpectatorView";
+                    findRoom.RoomsFound += rooms =>
+                    {
+                        var found = rooms.FirstOrDefault(room => room.Attributes["name"] == roomName);
+                        if (found != null)
+                        {
+                            Debug.Log($"Room {roomName} found");
+                            OnNetworkConfigurationUpdated(this, found.Connection);
+                        }
+                        Destroy(findRoom);
+                    };
+                    findRoom.StartDiscovery();
                 }
                 else
                 {
@@ -287,19 +303,6 @@ namespace Microsoft.MixedReality.SpectatorView
                 Debug.developerConsoleVisible)
             {
                 Debug.developerConsoleVisible = false;
-            }
-
-            if (discoveryTask != null)
-            {
-                var found = discoveryTask.Rooms.FirstOrDefault();
-                if (found != null)
-                {
-                    Debug.Log($"Found room {roomName} at {found.Connection}");
-                    // Start the observer.
-                    OnNetworkConfigurationUpdated(discoveryTask, found.Connection);
-                    discoveryTask.Dispose();
-                    discoveryTask = null;
-                }
             }
         }
 
@@ -346,11 +349,12 @@ namespace Microsoft.MixedReality.SpectatorView
         private void StartAdvertisingBroadcaster()
         {
             var localIpAddress = SocketerClient.GetLocalIPAddress();
-            matchmakingService.CreateRoomAsync(roomName, localIpAddress);
+            matchmakingService.CreateRoomAsync("SpectatorView", localIpAddress, new Dictionary<string, string>{["name"] = roomName});
         }
 
         private void RunStateSynchronizationAsObserver()
         {
+            DebugLog("Beginning state synchronization as an observer.");
             stateSynchronizationBroadcaster.gameObject.SetActive(false);
             stateSynchronizationObserver.gameObject.SetActive(true);
 
@@ -435,14 +439,12 @@ namespace Microsoft.MixedReality.SpectatorView
                     Destroy(mobileNetworkConfigurationVisual);
                     mobileNetworkConfigurationVisual = null;
                 }
-                else
-                {
-                    networkConfigurationVisual.NetworkConfigurationUpdated += OnNetworkConfigurationUpdated;
-                }
             }
 
             if (networkConfigurationVisual != null)
             {
+                networkConfigurationVisual.NetworkConfigurationUpdated += OnNetworkConfigurationUpdated;
+                networkConfigurationVisual.MatchmakingService = matchmakingService;
                 networkConfigurationVisual.Show();
             }
 #endif
