@@ -169,6 +169,7 @@ namespace Microsoft.MixedReality.SpectatorView
         private GameObject settingsGameObject;
         private Dictionary<SpatialCoordinateSystemParticipant, ISet<Guid>> peerSupportedLocalizers = new Dictionary<SpatialCoordinateSystemParticipant, ISet<Guid>>();
         private SpatialCoordinateSystemParticipant currentParticipant = null;
+        private RoomDiscovery _discovery;
 
 #if UNITY_ANDROID || UNITY_IOS
         private GameObject mobileRecordingServiceVisual = null;
@@ -262,10 +263,10 @@ namespace Microsoft.MixedReality.SpectatorView
                     var roomName = GetRoomName();
                     // Start room discovery. The observer will be started when a room is found.
                     DebugLog($"Searching for room {roomName}");
-                    var findRoom = gameObject.AddComponent<RoomDiscovery>();
-                    findRoom.MatchmakingService = matchmakingService;
-                    findRoom.Category = "SpectatorView";
-                    findRoom.RoomsFound += rooms =>
+                    _discovery = gameObject.AddComponent<RoomDiscovery>();
+                    _discovery.MatchmakingService = matchmakingService;
+                    _discovery.Category = "SpectatorView";
+                    _discovery.RoomsFound += rooms =>
                     {
                         var found = rooms.FirstOrDefault(room => room.Attributes["name"] == roomName);
                         if (found != null)
@@ -273,9 +274,9 @@ namespace Microsoft.MixedReality.SpectatorView
                             Debug.Log($"Room {roomName} found");
                             OnNetworkConfigurationUpdated(this, found.Connection);
                         }
-                        Destroy(findRoom);
+                        Destroy(_discovery);
                     };
-                    findRoom.StartDiscovery();
+                    _discovery.StartDiscovery();
                 }
                 else
                 {
@@ -311,6 +312,12 @@ namespace Microsoft.MixedReality.SpectatorView
 
         private void OnDestroy()
         {
+            if (_discovery != null)
+            {
+                Destroy(_discovery);
+                _discovery = null;
+            }
+
             Destroy(settingsGameObject);
 
 #if UNITY_ANDROID || UNITY_IOS
