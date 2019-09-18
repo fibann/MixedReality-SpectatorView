@@ -48,12 +48,28 @@ namespace Microsoft.MixedReality.SpectatorView
             public string LocalAddress;
         }
 
-        /// <summary>
-        /// Configuration for the matchmaking service.
-        /// </summary>
         [Tooltip("Configuration for the matchmaking service.")]
         [SerializeField]
         private Options _options = new Options();
+
+        /// <summary>
+        /// Configuration for the matchmaking service. Can only be set before the component is enabled.
+        /// </summary>
+        public Options OptionValues
+        {
+            get => _options;
+            set
+            {
+                if (_mmService != null)
+                {
+                    Debug.LogError("Cannot set options after MatchmakingService has been enabled.");
+                }
+                else
+                {
+                    _options = value;
+                }
+            }
+        }
 
         private IMatchmakingService _mmService;
 

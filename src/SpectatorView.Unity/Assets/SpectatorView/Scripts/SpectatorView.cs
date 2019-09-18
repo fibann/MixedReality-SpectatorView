@@ -8,9 +8,7 @@ using System.Collections.Generic;
 using System;
 using System.Threading.Tasks;
 using Microsoft.MixedReality.SpatialAlignment;
-using Microsoft.MixedReality.Sharing.Matchmaking;
 using System.Linq;
-using System.Net;
 
 [assembly: InternalsVisibleToAttribute("Microsoft.MixedReality.SpectatorView.Editor")]
 
@@ -47,12 +45,12 @@ namespace Microsoft.MixedReality.SpectatorView
 
         /// <summary>
         /// The user will advertise this room and clients will search for it and join it automatically.
-        /// Ignored if 'Use Mobile Network Configuration Visual' is set to true or if 'Matchmaking Service' is null.
+        /// Ignored if 'Matchmaking Service' is null. Can be overridden by the network configuration settings/visual.
         /// </summary>
         [Tooltip("The user will advertise this room and clients will search for it and join it automatically. " +
-            "Ignored if 'Use Mobile Network Configuration Visual' is set to true or if 'Matchmaking Service' is null.")]
+            "Ignored if 'Matchmaking Service' is null. Can be overridden by the network configuration settings/visual.")]
         [SerializeField]
-        private string roomName = "SpectatorView";
+        private string defaultRoomName = "SpectatorView";
 
         /// <summary>
         /// User IP address, this value is used for the user if 'Use Mobile Network Configuration Visual' is set to false and 'Matchmaking Service' is null.
@@ -213,7 +211,11 @@ namespace Microsoft.MixedReality.SpectatorView
                     return;
                 }
 
-                // TODO override options from settings
+                if (NetworkConfigurationSettings.IsInitialized &&
+                    NetworkConfigurationSettings.Instance.OverrideMatchmakingOptions)
+                {
+                    matchmakingService.OptionValues = NetworkConfigurationSettings.Instance.MatchmakingOptionsOverrideValues;
+                }
 
                 matchmakingService.gameObject.SetActive(true);
             }
@@ -257,6 +259,7 @@ namespace Microsoft.MixedReality.SpectatorView
                 DebugLog("Not using a network configuration visual");
                 if (ShouldUseMatchmaking())
                 {
+                    var roomName = GetRoomName();
                     // Start room discovery. The observer will be started when a room is found.
                     DebugLog($"Searching for room {roomName}");
                     var findRoom = gameObject.AddComponent<RoomDiscovery>();
@@ -349,7 +352,7 @@ namespace Microsoft.MixedReality.SpectatorView
         private void StartAdvertisingBroadcaster()
         {
             var localIpAddress = SocketerClient.GetLocalIPAddress();
-            matchmakingService.CreateRoomAsync("SpectatorView", localIpAddress, new Dictionary<string, string>{["name"] = roomName});
+            matchmakingService.CreateRoomAsync("SpectatorView", localIpAddress, new Dictionary<string, string>{["name"] = GetRoomName()});
         }
 
         private void RunStateSynchronizationAsObserver()
@@ -470,11 +473,20 @@ namespace Microsoft.MixedReality.SpectatorView
         {
             if (NetworkConfigurationSettings.IsInitialized)
             {
-                // TODO check some flag in the settings
+                return NetworkConfigurationSettings.Instance.EnableMatchmaking;
             }
             return matchmakingService != null;
         }
 
+        private string GetRoomName()
+        {
+            if (NetworkConfigurationSettings.IsInitialized &&
+                !string.IsNullOrEmpty(NetworkConfigurationSettings.Instance.OverrideRoomName))
+            {
+                return NetworkConfigurationSettings.Instance.OverrideRoomName;
+            }
+            return defaultRoomName;
+        }
 
         private bool ShouldUseNetworkConfigurationVisual()
         {

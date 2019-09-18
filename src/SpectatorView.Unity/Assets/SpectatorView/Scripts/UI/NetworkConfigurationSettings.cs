@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
+using UnityEditor;
 using UnityEngine;
 
 namespace Microsoft.MixedReality.SpectatorView
@@ -11,18 +12,29 @@ namespace Microsoft.MixedReality.SpectatorView
         [SerializeField]
         private GameObject overrideConnectionManagerPrefab = null;
         
-        public string RoomName;
-        public string BroadcastIPAddress = "255.255.255.255";
-        public ushort BroadcastPort = 7411;
-        public bool JoinMulticastGroup = false;
-
-        [Tooltip("Check to enable a mobile network configuration visual to obtain the user IP Address.")]
+        [Tooltip("Check to enable a mobile network configuration visual to obtain the connection information.")]
         [SerializeField]
         private bool enableMobileNetworkConfigurationVisual = true;
 
-        [Tooltip("Prefab for creating amobile network configuration visual, which replaces the defaultMobileNetworkConfigurationVisualPrefab on the SpectatorView component if set.")]
+        [Tooltip("Prefab for creating a mobile network configuration visual, which replaces the defaultMobileNetworkConfigurationVisualPrefab on the SpectatorView component if set.")]
         [SerializeField]
         private GameObject overrideMobileNetworkConfigurationVisualPrefab = null;
+
+        [Tooltip("Enable automatic user discovery. If false, the User IP Address in the SpectatorView component will be used.")]
+        [SerializeField]
+        private bool enableMatchmaking = true;
+
+        [Tooltip("Replaces the default Room Name on the SpectatorView component if not empty.")]
+        [SerializeField]
+        private string overrideRoomName = "";
+
+        [Tooltip("Check to override the options on the MatchmakingService component.")]
+        [SerializeField]
+        private bool overrideMatchmakingOptions = false;
+
+        [Tooltip("Replace the default options on the MatchmakingService component if 'Override Matchmaking Options' is set.")]
+        [SerializeField]
+        private MatchmakingService.Options matchmakingOptionsOverrideValues = new MatchmakingService.Options();
 
         /// <summary>
         /// Prefab for creating an INetworkConnectionManager.
@@ -38,5 +50,25 @@ namespace Microsoft.MixedReality.SpectatorView
         /// Prefab for creating a mobile network configuration visual.
         /// </summary>
         public GameObject OverrideMobileNetworkConfigurationVisualPrefab => overrideMobileNetworkConfigurationVisualPrefab;
+
+        /// <summary>
+        /// Enable automatic user discovery. If false, the User IP Address in the SpectatorView component will be used.
+        /// </summary>
+        public bool EnableMatchmaking => enableMatchmaking;
+
+        /// <summary>
+        /// Replaces the default Room Name on the SpectatorView component if not empty.
+        /// </summary>
+        public string OverrideRoomName => overrideRoomName;
+
+        /// <summary>
+        /// Check to override the options on the MatchmakingService component.
+        /// </summary>
+        public bool OverrideMatchmakingOptions => overrideMatchmakingOptions;
+
+        /// <summary>
+        /// Replace the default options on the MatchmakingService component if 'Override Matchmaking Options' is set.
+        /// </summary>
+        public MatchmakingService.Options MatchmakingOptionsOverrideValues => matchmakingOptionsOverrideValues;
     }
 }
