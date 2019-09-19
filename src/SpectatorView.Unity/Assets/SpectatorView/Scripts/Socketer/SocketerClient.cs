@@ -424,7 +424,8 @@ namespace Microsoft.MixedReality.SpectatorView
                             return p.ProfileName != icp.ProfileName &&
                                 p.GetNetworkConnectivityLevel() != NetworkConnectivityLevel.None;
                         });
-                    address = GetAddressFromAdapterId(fallbackProfile.NetworkAdapter.NetworkAdapterId);
+                    address = fallbackProfile == null ? null :
+                        GetAddressFromAdapterId(fallbackProfile.NetworkAdapter.NetworkAdapterId);
                 }
 
                 if (address != null)
