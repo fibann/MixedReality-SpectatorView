@@ -31,7 +31,7 @@ namespace Microsoft.MixedReality.SpectatorView
         {
             /// <summary>Port used to send and receive broadcast packets.</summary>
             [Tooltip("Port used to send and receive broadcast packets.")]
-            public ushort BroadcastPort = 7411;
+            public ushort BroadcastPort = 17410;
 
             /// <summary>
             /// Address used to send and receive broadcast packets. Should be an IP broadcast or multicast address.
