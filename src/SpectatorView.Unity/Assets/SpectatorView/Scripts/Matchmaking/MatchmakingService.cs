@@ -8,11 +8,11 @@
 using Microsoft.MixedReality.Sharing.Matchmaking;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using UnityEditor;
 using UnityEngine;
 
 namespace Microsoft.MixedReality.SpectatorView
@@ -78,10 +78,8 @@ namespace Microsoft.MixedReality.SpectatorView
         private class DiscoveryTask : IDiscoveryTask
         {
             // Initialized on construction, set to null when object is disposed.
-            private volatile IDiscoveryTask _task;
-
-            private readonly AndroidJavaObject _mcastLock;
-            private readonly List<DiscoveryTask> _discoveryTasks;
+            private readonly IDiscoveryTask _task;
+            private readonly MatchmakingService _mmService;
 
             public IEnumerable<IRoom> Rooms => _task.Rooms;
 
@@ -98,37 +96,70 @@ namespace Microsoft.MixedReality.SpectatorView
                 }
             }
 
-            public DiscoveryTask(IDiscoveryTask task, AndroidJavaObject mcastLock, List<DiscoveryTask> discoveryTasks)
+            public DiscoveryTask(IDiscoveryTask task, MatchmakingService mmService)
             {
                 _task = task;
-                _mcastLock = mcastLock;
-                _discoveryTasks = discoveryTasks;
-
-                _mcastLock.Call("acquire");
-                lock(discoveryTasks)
-                {
-                    discoveryTasks.Add(this);
-                }
+                _mmService = mmService;
+                _mmService.AcquireMulticastLock(this);
             }
 
             public void Dispose()
             {
-                if (_task != null)
-                {
-                    lock (_discoveryTasks)
-                    {
-                        _discoveryTasks.Remove(this);
-                    }
-                    _task.Dispose();
-                    _mcastLock.Call("release");
-                    _task = null;
-                }
+                _task.Dispose();
+                _mmService.ReleaseMulticastLock(this);
             }
         }
 
         private AndroidJavaObject _mcastLock;
-        private List<DiscoveryTask> _discoveryTasks = new List<DiscoveryTask>();
-        private bool _hasRooms = false;
+        private ISet<DiscoveryTask> _discoveryTasks = new HashSet<DiscoveryTask>();
+
+        private void AcquireMulticastLock(DiscoveryTask task)
+        {
+            bool needAcquire;
+            lock (_discoveryTasks)
+            {
+                // Acquire if this is the first task being created.
+                needAcquire = !_discoveryTasks.Any();
+                _discoveryTasks.Add(task);
+            }
+            if (needAcquire)
+            {
+                Debug.Log("Acquiring MulticastLock");
+                _mcastLock.Call("acquire");
+            }
+        }
+
+        private void ReleaseMulticastLock(DiscoveryTask task)
+        {
+            bool needRelease;
+            lock (_discoveryTasks)
+            {
+                // Release if this is the last task being disposed.
+                needRelease = _discoveryTasks.Remove(task) && !_discoveryTasks.Any();
+            }
+            if (needRelease)
+            {
+                Debug.Log("Releasing MulticastLock");
+                _mcastLock.Call("release");
+            }
+
+        }
+
+        private void Awake()
+        {
+            // Create the MulticastLock.
+            using (AndroidJavaObject activity = new AndroidJavaClass("com.unity3d.player.UnityPlayer").GetStatic<AndroidJavaObject>("currentActivity"))
+            using (var wifiManager = activity.Call<AndroidJavaObject>("getSystemService", "wifi"))
+            {
+                _mcastLock = wifiManager.Call<AndroidJavaObject>("createMulticastLock", "MatchmakingMulticastLock");
+            }
+        }
+
+        private void OnDestroy()
+        {
+            _mcastLock.Dispose();
+            _mcastLock = null;
+        }
 #endif
 
         // Starts the matchmaking service.
@@ -176,16 +207,6 @@ namespace Microsoft.MixedReality.SpectatorView
                 $" broadcasting to {bcastAddress}, on port {_options.BroadcastPort}");
             _mmService = new PeerMatchmakingService(
                 new UdpPeerNetwork(bcastAddress, _options.BroadcastPort, localAddress));
-
-#if ANDROID_DEVICE
-            // Create the MulticastLock.
-            using (AndroidJavaObject activity = new AndroidJavaClass("com.unity3d.player.UnityPlayer").GetStatic<AndroidJavaObject>("currentActivity"))
-            using (var wifiManager = activity.Call<AndroidJavaObject>("getSystemService", "wifi"))
-            {
-                _mcastLock = wifiManager.Call<AndroidJavaObject>("createMulticastLock", "MMMulticastLock");
-                _mcastLock.Call("setReferenceCounted", true);
-            }
-#endif
         }
 
         public Task<IRoom> CreateRoomAsync(
@@ -208,12 +229,8 @@ namespace Microsoft.MixedReality.SpectatorView
                     {
                         Debug.Log($"Room ({category}, {connection}) created");
 #if ANDROID_DEVICE
-                        if (!_hasRooms)
-                        {
-                            // Keep one reference if any room is created (need to listen for queries).
-                            _mcastLock.Call("acquire");
-                            _hasRooms = true;
-                        }
+                        // Add one permanent reference if any room is created (need to listen for queries).
+                        AcquireMulticastLock(null);
 #endif
                         return task.Result;
                     }
@@ -233,37 +250,21 @@ namespace Microsoft.MixedReality.SpectatorView
             Debug.Log($"Start discovery of category {category}");
             var task = _mmService.StartDiscovery(category);
 #if ANDROID_DEVICE
-            return new DiscoveryTask(task, _mcastLock, _discoveryTasks);
+            return new DiscoveryTask(task, this);
 #else
             return task;
 #endif
         }
 
-
         private void OnDisable()
         {
 #if ANDROID_DEVICE
-            // Dispose the existing task wrappers and release references.
-            DiscoveryTask[] tasks;
+            bool needRelease;
             lock (_discoveryTasks)
             {
-                tasks = _discoveryTasks.ToArray();
+                needRelease = _discoveryTasks.Any();
                 _discoveryTasks.Clear();
             }
-            foreach (var task in tasks)
-            {
-                task.Dispose();
-            }
-
-            if (_hasRooms)
-            {
-                // Release the reference held for the local rooms.
-                _mcastLock.Call("release");
-                _hasRooms = false;
-            }
-
-            _mcastLock.Dispose();
-            _mcastLock = null;
 #endif
             _mmService.Dispose();
             _mmService = null;
