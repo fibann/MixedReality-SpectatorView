@@ -81,7 +81,7 @@ namespace Microsoft.MixedReality.SpectatorView
 
         }
 
-        private void OnDisabled()
+        private void OnDisable()
         {
             StopDiscovery();
         }

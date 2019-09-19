@@ -110,9 +110,10 @@ namespace Microsoft.MixedReality.SpectatorView
                 if (found != null)
                 {
                     Debug.Log($"Found room {_roomName} at {found.Connection}");
+                    Destroy(_roomDiscovery);
+                    _roomDiscovery = null;
                     NetworkConfigurationUpdated?.Invoke(this, found.Connection);
                 }
-                Destroy(_roomDiscovery);
             };
             _roomDiscovery.StartDiscovery();
         }
