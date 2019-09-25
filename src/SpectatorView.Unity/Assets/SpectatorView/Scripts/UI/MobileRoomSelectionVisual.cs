@@ -68,7 +68,7 @@ namespace Microsoft.MixedReality.SpectatorView
         {
             _discovery = gameObject.AddComponent<RoomDiscovery>();
             _discovery.MatchmakingService = _matchmakingService;
-            _discovery.Category = "SpectatorView";
+            _discovery.Category = SpectatorView.MatchmakingUsersCategory;
             _discovery.RoomsFound += rooms =>
             {
                 // TODO preserve current selection and order

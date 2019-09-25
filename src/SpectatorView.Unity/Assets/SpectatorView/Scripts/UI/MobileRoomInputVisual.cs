@@ -100,7 +100,7 @@ namespace Microsoft.MixedReality.SpectatorView
             _roomName = _roomNameField.text;
             _roomDiscovery = gameObject.AddComponent<RoomDiscovery>();
             _roomDiscovery.MatchmakingService = _matchmakingService;
-            _roomDiscovery.Category = "SpectatorView";
+            _roomDiscovery.Category = SpectatorView.MatchmakingUsersCategory;
             _roomDiscovery.RoomsFound += rooms =>
             {
                 // Find a room with the specified name

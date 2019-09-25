@@ -26,6 +26,7 @@ namespace Microsoft.MixedReality.SpectatorView
     public class SpectatorView : MonoBehaviour
     {
         public const string SettingsPrefabName = "SpectatorViewSettings";
+        public const string MatchmakingUsersCategory = "SpectatorView.Users";
 
         /// <summary>
         /// Role of the device in the spectator view experience.
@@ -265,7 +266,7 @@ namespace Microsoft.MixedReality.SpectatorView
                     DebugLog($"Searching for room {roomName}");
                     _discovery = gameObject.AddComponent<RoomDiscovery>();
                     _discovery.MatchmakingService = matchmakingService;
-                    _discovery.Category = "SpectatorView";
+                    _discovery.Category = MatchmakingUsersCategory;
                     _discovery.RoomsFound += rooms =>
                     {
                         var found = rooms.FirstOrDefault(room => room.Attributes["name"] == roomName);
@@ -359,7 +360,7 @@ namespace Microsoft.MixedReality.SpectatorView
         private void StartAdvertisingBroadcaster()
         {
             var localIpAddress = SocketerClient.GetLocalIPAddress();
-            matchmakingService.CreateRoomAsync("SpectatorView", localIpAddress, new Dictionary<string, string>{["name"] = GetRoomName()});
+            matchmakingService.CreateRoomAsync(MatchmakingUsersCategory, localIpAddress, new Dictionary<string, string>{["name"] = GetRoomName()});
         }
 
         private void RunStateSynchronizationAsObserver()
