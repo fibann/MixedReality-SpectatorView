@@ -338,7 +338,7 @@ namespace Microsoft.MixedReality.SpectatorView
             }
             if (stateSynchronizationBroadcaster != null)
             {
-                stateSynchronizationBroadcaster.OnStarted -= StartAdvertisingBroadcaster;
+                stateSynchronizationBroadcaster.StartedListening -= StartAdvertisingBroadcaster;
             }
         }
 
@@ -353,11 +353,11 @@ namespace Microsoft.MixedReality.SpectatorView
             if (ShouldUseMatchmaking())
             {
                 // Start advertising the room once the broadcaster is listening for connections.
-                stateSynchronizationBroadcaster.OnStarted += StartAdvertisingBroadcaster;
+                stateSynchronizationBroadcaster.StartedListening += StartAdvertisingBroadcaster;
             }
         }
 
-        private void StartAdvertisingBroadcaster()
+        private void StartAdvertisingBroadcaster(INetworkManager _)
         {
             var localIpAddress = SocketerClient.GetLocalIPAddress();
             matchmakingService.CreateRoomAsync(MatchmakingUsersCategory, localIpAddress, new Dictionary<string, string>{["name"] = GetRoomName()});

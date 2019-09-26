@@ -20,6 +20,11 @@ namespace Microsoft.MixedReality.SpectatorView
         [SerializeField]
         public bool AttemptReconnectWhenClient = false;
 
+        /// <summary>
+        /// Called when the connection manager starts listening for connections.
+        /// </summary>
+        public event Action OnStartedListening;
+
         /// <inheritdoc />
         public event Action<INetworkConnection> OnConnected;
 
@@ -76,6 +81,7 @@ namespace Microsoft.MixedReality.SpectatorView
             if (server == null)
             {
                 server = DoStartListening(port);
+                OnStartedListening?.Invoke();
             }
         }
 

@@ -33,6 +33,11 @@ namespace Microsoft.MixedReality.SpectatorView
         TimeSpan TimeSinceLastUpdate { get; }
 
         /// <summary>
+        /// Called after the manager has started listening for connections.
+        /// </summary>
+        event Action<INetworkManager> StartedListening;
+
+        /// <summary>
         /// Starts listening on the given port.
         /// </summary>
         /// <param name="port">The port to listen for new connections on.</param>

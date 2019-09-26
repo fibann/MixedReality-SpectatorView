@@ -39,6 +39,9 @@ namespace Microsoft.MixedReality.SpectatorView
         /// </summary>
         protected abstract int RemotePort { get; }
 
+        /// <inheritdoc />
+        public event Action<INetworkManager> StartedListening;
+
         /// <summary>
         /// Starts a listening socket on the given port.
         /// </summary>
@@ -91,6 +94,7 @@ namespace Microsoft.MixedReality.SpectatorView
             base.Awake();
             CreateConnectionManager();
 
+            connectionManager.OnStartedListening += () => StartedListening?.Invoke(this);
             connectionManager.OnConnected += OnConnected;
             connectionManager.OnDisconnected += OnDisconnected;
             connectionManager.OnReceive += OnReceive;

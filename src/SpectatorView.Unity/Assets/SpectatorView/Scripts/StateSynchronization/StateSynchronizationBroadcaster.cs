@@ -34,11 +34,6 @@ namespace Microsoft.MixedReality.SpectatorView
 
         protected override int RemotePort => Port;
 
-        /// <summary>
-        /// Called after the broadcaster has started listening for connections.
-        /// </summary>
-        public event Action OnStarted;
-
         protected override void Awake()
         {
             DebugLog($"Awoken!");
@@ -63,7 +58,6 @@ namespace Microsoft.MixedReality.SpectatorView
         {
             base.Start();
             StartListening(Port);
-            OnStarted?.Invoke();
         }
 
         private void DebugLog(string message)
