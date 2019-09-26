@@ -33,10 +33,8 @@ namespace Microsoft.MixedReality.SpectatorView
         private MatchmakingService _matchmakingService = null;
 
         //private string _roomName = "";
-        private IEnumerable<IRoom> _currentRooms = Enumerable.Empty<IRoom>();
+        private IRoom[] _currentRooms = Array.Empty<IRoom>();
         private RoomDiscovery _discovery;
-
-        //private static readonly string _roomNamePlayerPrefKey = $"{nameof(MobileRoomSelectionVisual)}.{nameof(_roomName)}";
 
         /// <summary>
         /// Matchmaking service used for room discovery.
@@ -71,11 +69,18 @@ namespace Microsoft.MixedReality.SpectatorView
             _discovery.Category = SpectatorView.MatchmakingUsersCategory;
             _discovery.RoomsFound += rooms =>
             {
-                // TODO preserve current selection and order
-                // TODO filter out rooms without "name"
-                _currentRooms = rooms;
+                int previouslySelectedIndex = _roomNameField.value;
+                IRoom previouslySelectedRoom = previouslySelectedIndex < _currentRooms.Length ? _currentRooms[previouslySelectedIndex] : null;
+
+                // Sort by name so the order is stable.
+                _currentRooms = rooms.Where(r => r.Attributes.ContainsKey("name")).OrderBy(r => r.Attributes["name"]).ToArray();
                 _roomNameField.ClearOptions();
-                _roomNameField.AddOptions(rooms.Select(room => room.Attributes["name"]).ToList());
+                _roomNameField.AddOptions(_currentRooms.Select(r => r.Attributes["name"]).ToList());
+
+                // Select the option which was previously selected if still there.
+                int newIndex = previouslySelectedRoom != null ?
+                    Array.FindIndex(_currentRooms, r => r.UniqueId == previouslySelectedRoom.UniqueId) : -1;
+                _roomNameField.value = newIndex >= 0 ? newIndex : 0;
             };
             _discovery.StartDiscovery();
         }
@@ -96,10 +101,6 @@ namespace Microsoft.MixedReality.SpectatorView
                 _connectButton.onClick.AddListener(OnConnectButtonClick);
             }
 
-            // TODO
-            //_roomName = PlayerPrefs.GetString(_roomNamePlayerPrefKey, _roomName);
-            //int index = _roomNameField.options.FindIndex(option => option.text == _roomName);
-
             _roomNameField.ClearOptions();
 
             // Start discovery here if the service is set, otherwise delay until Show() is called.
@@ -111,8 +112,6 @@ namespace Microsoft.MixedReality.SpectatorView
 
         private void OnDisable()
         {
-            //PlayerPrefs.SetString(_roomNamePlayerPrefKey, _roomName);
-            //PlayerPrefs.Save();
             StopDiscovery();
         }
 
