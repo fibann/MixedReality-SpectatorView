@@ -261,23 +261,7 @@ namespace Microsoft.MixedReality.SpectatorView
                 DebugLog("Not using a network configuration visual");
                 if (ShouldUseMatchmaking())
                 {
-                    var roomName = GetRoomName();
-                    // Start room discovery. The observer will be started when a room is found.
-                    DebugLog($"Searching for room {roomName}");
-                    _discovery = gameObject.AddComponent<RoomDiscovery>();
-                    _discovery.MatchmakingService = matchmakingService;
-                    _discovery.Category = MatchmakingUsersCategory;
-                    _discovery.RoomsFound += rooms =>
-                    {
-                        var found = rooms.FirstOrDefault(room => room.Attributes["name"] == roomName);
-                        if (found != null)
-                        {
-                            Debug.Log($"Room {roomName} found");
-                            OnNetworkConfigurationUpdated(this, found.Connection);
-                        }
-                        Destroy(_discovery);
-                    };
-                    _discovery.StartDiscovery();
+                    StartRoomDiscovery();
                 }
                 else
                 {
@@ -494,6 +478,27 @@ namespace Microsoft.MixedReality.SpectatorView
                 return NetworkConfigurationSettings.Instance.OverrideRoomName;
             }
             return defaultRoomName;
+        }
+
+        private void StartRoomDiscovery()
+        {
+            // Start room discovery. The observer will be started when a room is found.
+            var roomName = GetRoomName();
+            DebugLog($"Searching for room {roomName}");
+            _discovery = gameObject.AddComponent<RoomDiscovery>();
+            _discovery.MatchmakingService = matchmakingService;
+            _discovery.Category = MatchmakingUsersCategory;
+            _discovery.RoomsFound += rooms =>
+            {
+                var found = rooms.FirstOrDefault(room => room.Attributes["name"] == roomName);
+                if (found != null)
+                {
+                    Debug.Log($"Room {roomName} found");
+                    OnNetworkConfigurationUpdated(this, found.Connection);
+                }
+                Destroy(_discovery);
+            };
+            _discovery.StartDiscovery();
         }
 
         private bool ShouldUseNetworkConfigurationVisual()
