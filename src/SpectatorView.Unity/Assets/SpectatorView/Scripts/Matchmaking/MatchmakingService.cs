@@ -152,6 +152,9 @@ namespace Microsoft.MixedReality.SpectatorView
             _mmService = new PeerMatchmakingService(network);
         }
 
+        /// <summary>
+        /// Create a room. See <see cref="IMatchmakingService.CreateRoomAsync(string, string, IReadOnlyDictionary{string, string}, CancellationToken)"/>.
+        /// </summary>
         public Task<IRoom> CreateRoomAsync(
             string category,
             string connection,
@@ -178,6 +181,9 @@ namespace Microsoft.MixedReality.SpectatorView
                 }, token);
         }
 
+        /// <summary>
+        /// Start discovering rooms. See <see cref="IMatchmakingService.StartDiscovery(string)"/>.
+        /// </summary>
         public IDiscoveryTask StartDiscovery(string category)
         {
             if (_mmService == null)

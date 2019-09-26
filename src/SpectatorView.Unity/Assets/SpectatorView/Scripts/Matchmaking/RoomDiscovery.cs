@@ -36,6 +36,10 @@ namespace Microsoft.MixedReality.SpectatorView
         /// </summary>
         public event Action<IEnumerable<IRoom>> RoomsFound;
 
+        /// <summary>
+        /// Start the discovery of the selected category. <see cref="RoomsFound"/> will be called on the Update loop
+        /// when new rooms are detected.
+        /// </summary>
         public void StartDiscovery()
         {
             if (MatchmakingService == null)
@@ -54,6 +58,9 @@ namespace Microsoft.MixedReality.SpectatorView
             _discoveryTask.Updated += (task) => { _roomsHaveBeenUpdated = true; };
         }
 
+        /// <summary>
+        /// Stop the discovery of the selected category.
+        /// </summary>
         public void StopDiscovery()
         {
             if (_discoveryTask != null)
