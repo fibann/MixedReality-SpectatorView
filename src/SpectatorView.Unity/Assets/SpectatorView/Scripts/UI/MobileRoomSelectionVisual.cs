@@ -33,7 +33,7 @@ namespace Microsoft.MixedReality.SpectatorView
         private MatchmakingService _matchmakingService = null;
 
         //private string _roomName = "";
-        private IRoom[] _currentRooms = Array.Empty<IRoom>();
+        private IDiscoveryResource[] _currentRooms = Array.Empty<IDiscoveryResource>();
         private RoomDiscovery _discovery;
 
         /// <summary>
@@ -70,7 +70,7 @@ namespace Microsoft.MixedReality.SpectatorView
             _discovery.RoomsFound += rooms =>
             {
                 int previouslySelectedIndex = _roomNameField.value;
-                IRoom previouslySelectedRoom = previouslySelectedIndex < _currentRooms.Length ? _currentRooms[previouslySelectedIndex] : null;
+                IDiscoveryResource previouslySelectedRoom = previouslySelectedIndex < _currentRooms.Length ? _currentRooms[previouslySelectedIndex] : null;
 
                 // Sort by name so the order is stable.
                 _currentRooms = rooms.Where(r => r.Attributes.ContainsKey("name")).OrderBy(r => r.Attributes["name"]).ToArray();

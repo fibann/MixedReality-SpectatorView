@@ -27,14 +27,14 @@ namespace Microsoft.MixedReality.SpectatorView
         [Tooltip("Room category to discover.")]
         public string Category;
 
-        private IDiscoveryTask _discoveryTask = null;
+        private IDiscoverySubscription _discoveryTask = null;
         private volatile bool _roomsHaveBeenUpdated = false;
 
         /// <summary>
         /// Called during <see cref="Update"/> every time that rooms are updated.
         /// Handlers are released when this object is destroyed.
         /// </summary>
-        public event Action<IEnumerable<IRoom>> RoomsFound;
+        public event Action<IEnumerable<IDiscoveryResource>> RoomsFound;
 
         /// <summary>
         /// Start the discovery of the selected category. <see cref="RoomsFound"/> will be called on the Update loop
@@ -83,9 +83,8 @@ namespace Microsoft.MixedReality.SpectatorView
             if (_discoveryTask != null && _roomsHaveBeenUpdated)
             {
                 _roomsHaveBeenUpdated = false;
-                RoomsFound?.Invoke(_discoveryTask.Rooms);
+                RoomsFound?.Invoke(_discoveryTask.Resources);
             }
-
         }
 
         private void OnDisable()

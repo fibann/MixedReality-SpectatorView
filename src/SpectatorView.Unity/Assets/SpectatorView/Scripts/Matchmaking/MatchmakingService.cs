@@ -71,7 +71,7 @@ namespace Microsoft.MixedReality.SpectatorView
             }
         }
 
-        private IMatchmakingService _mmService;
+        private IDiscoveryAgent _mmService;
 
 #if ANDROID_DEVICE
         // MulticastLock used to keep receiving broadcast UDP queries/announcements.
@@ -137,7 +137,7 @@ namespace Microsoft.MixedReality.SpectatorView
 
             Debug.Log($"Starting matchmaking service, binding to {localAddress}," +
                 $" broadcasting to {bcastAddress}, on port {_options.BroadcastPort}");
-            var network = new UdpPeerNetwork(bcastAddress, _options.BroadcastPort, localAddress);
+            var network = new UdpPeerDiscoveryTransport(bcastAddress, _options.BroadcastPort, localAddress);
 #if ANDROID_DEVICE
             // Acquire the MulticastLock when the network is active.
             network.Started += _ =>
@@ -149,13 +149,13 @@ namespace Microsoft.MixedReality.SpectatorView
                 _mcastLock.Call("release");
             };
 #endif
-            _mmService = new PeerMatchmakingService(network);
+            _mmService = new PeerDiscoveryAgent(network);
         }
 
         /// <summary>
         /// Create a room. See <see cref="IMatchmakingService.CreateRoomAsync(string, string, IReadOnlyDictionary{string, string}, CancellationToken)"/>.
         /// </summary>
-        public Task<IRoom> CreateRoomAsync(
+        public Task<IDiscoveryResource> CreateRoomAsync(
             string category,
             string connection,
             IReadOnlyDictionary<string, string> attributes = null,
@@ -168,7 +168,7 @@ namespace Microsoft.MixedReality.SpectatorView
             }
 
             Debug.Log($"Creating room ({category}, {connection})");
-            return _mmService.CreateRoomAsync(category, connection, attributes, token)
+            return _mmService.PublishAsync(category, connection, attributes, token)
                 .ContinueWith(task =>
                 {
                     if (task.Status == TaskStatus.RanToCompletion)
@@ -184,7 +184,7 @@ namespace Microsoft.MixedReality.SpectatorView
         /// <summary>
         /// Start discovering rooms. See <see cref="IMatchmakingService.StartDiscovery(string)"/>.
         /// </summary>
-        public IDiscoveryTask StartDiscovery(string category)
+        public IDiscoverySubscription StartDiscovery(string category)
         {
             if (_mmService == null)
             {
@@ -193,7 +193,7 @@ namespace Microsoft.MixedReality.SpectatorView
             }
 
             Debug.Log($"Start discovery of category {category}");
-            return _mmService.StartDiscovery(category);
+            return _mmService.Subscribe(category);
         }
 
         private void OnDisable()
