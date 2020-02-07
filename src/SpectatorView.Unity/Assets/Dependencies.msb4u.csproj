@@ -33,7 +33,7 @@
   <Import Project="$(MSBuildForUnityGeneratedOutputDirectory)\$(MSBuildProjectName).g.props" />
   
   <ItemGroup>
-    <!--Add NuGet or Project references here-->
+    <PackageReference Include="Microsoft.MixedReality.Sharing.Matchmaking" Version="0.0.1-*" />
   </ItemGroup>
 
   <Import Project="$(MSBuildForUnityGeneratedOutputDirectory)\$(MSBuildProjectName).g.targets" />
